@@ -31,6 +31,11 @@ class SimpleNeuralNetwork:
         y_pred = np.clip(y_pred, eps, 1 - eps)
         return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
 
+    @staticmethod
+    def accuracy(y_true, y_pred, threshold=0.5):
+        y_hat = (y_pred >= threshold).astype(int)
+        return float(np.mean(y_hat == y_true))
+
 
     def forward(self, X):
         # cache values for backprop
@@ -81,4 +86,7 @@ class SimpleNeuralNetwork:
             self.backward(y, learning_rate=learning_rate)
 
             if epoch % log_every == 0 or epoch == 1:
-                print(f"Epoch {epoch:>5} | Loss: {loss:.6f}")
+                acc = self.accuracy(y, y_pred)
+                print(f"Epoch {epoch:5d} | Loss: {loss:.6f} | Acc: {acc:.2f}")
+
+
