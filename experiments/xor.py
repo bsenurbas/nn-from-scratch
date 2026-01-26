@@ -21,7 +21,7 @@ nn = SimpleNeuralNetwork(hidden_size=3, seed=42)
 print("Before training:")
 print(nn.forward(X))
 
-nn.train(X, y, epochs=5000, learning_rate=0.5, log_every=500)
+nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500)
 
 print("\nAfter training:")
 print(nn.forward(X))

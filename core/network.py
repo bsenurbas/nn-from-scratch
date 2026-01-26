@@ -21,9 +21,16 @@ class SimpleNeuralNetwork:
         # If a = sigmoid(z), then d(sigmoid)/dz = a * (1 - a)
         return sigmoid_output * (1 - sigmoid_output)
 
-    @staticmethod
+    """@staticmethod
     def mse(y_true, y_pred):
-        return np.mean((y_true - y_pred) ** 2)
+        return np.mean((y_true - y_pred) ** 2)"""
+    
+    @staticmethod
+    def bce(y_true, y_pred, eps=1e-12):
+        # log(0) hatasını önlemek için clipping
+        y_pred = np.clip(y_pred, eps, 1 - eps)
+        return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+
 
     def forward(self, X):
         # cache values for backprop
@@ -37,49 +44,40 @@ class SimpleNeuralNetwork:
 
         return self.y_pred
 
+
+    
     def backward(self, y_true, learning_rate=0.1):
         """
-        Backprop for MSE loss with sigmoid output.
-        Shapes (for XOR batch of 4):
-        X:     (4,2)
-        a1:    (4,3)
-        y_pred:(4,1)
-        """
+          BCE loss + sigmoid output için:
+         dL/dz2 = (y_pred - y) / m
+         """
+        m = y_true.shape[0]
 
-        m = y_true.shape[0]  # number of samples in batch
+        # Output layer gradient (BCE + sigmoid)
+        dL_dz2 = (self.y_pred - y_true) / m  # (m,1)
 
-        # dLoss/dy_pred for MSE: d/dy_pred mean((y - y_pred)^2) = 2*(y_pred - y)/m
-        dL_dy = (2 * (self.y_pred - y_true)) / m  # (m,1)
+        dL_dW2 = np.dot(self.a1.T, dL_dz2)               # (3,1)
+        dL_db2 = np.sum(dL_dz2, axis=0, keepdims=True)   # (1,1)
 
-        # y_pred = sigmoid(z2)
-        dy_dz2 = self.sigmoid_derivative(self.y_pred)  # (m,1)
-        dL_dz2 = dL_dy * dy_dz2  # (m,1)
+        # Hidden layer
+        dL_da1 = np.dot(dL_dz2, self.W2.T)               # (m,3)
+        dL_dz1 = dL_da1 * self.sigmoid_derivative(self.a1)
 
-        # z2 = a1.W2 + b2
-        dL_dW2 = np.dot(self.a1.T, dL_dz2)  # (3,m)@(m,1) -> (3,1)
-        dL_db2 = np.sum(dL_dz2, axis=0, keepdims=True)  # (1,1)
+        dL_dW1 = np.dot(self.X.T, dL_dz1)                # (2,3)
+        dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)   # (1,3)
 
-        # backprop into hidden layer
-        dL_da1 = np.dot(dL_dz2, self.W2.T)  # (m,1)@(1,3)->(m,3)
-
-        # a1 = sigmoid(z1)
-        da1_dz1 = self.sigmoid_derivative(self.a1)  # (m,3)
-        dL_dz1 = dL_da1 * da1_dz1  # (m,3)
-
-        # z1 = X.W1 + b1
-        dL_dW1 = np.dot(self.X.T, dL_dz1)  # (2,m)@(m,3)->(2,3)
-        dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)  # (1,3)
-
-        # gradient descent update
+        # Update
         self.W2 -= learning_rate * dL_dW2
         self.b2 -= learning_rate * dL_db2
         self.W1 -= learning_rate * dL_dW1
         self.b1 -= learning_rate * dL_db1
 
+
     def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500):
         for epoch in range(1, epochs + 1):
             y_pred = self.forward(X)
-            loss = self.mse(y, y_pred)
+            #loss = self.mse(y, y_pred)
+            loss = self.bce(y, y_pred)
             self.backward(y, learning_rate=learning_rate)
 
             if epoch % log_every == 0 or epoch == 1:
