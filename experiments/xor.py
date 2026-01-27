@@ -29,9 +29,7 @@ nn = SimpleNeuralNetwork(hidden_size=3, seed=42)
 probs_before = nn.forward(X)
 pretty_print("Before training", X, probs_before)
 
-nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500)
-
-nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500)
+nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500, batch_size=2, shuffle=True)
 
 probs_after = nn.forward(X)
 pretty_print("After training", X, probs_after)

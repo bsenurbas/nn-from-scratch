@@ -91,14 +91,50 @@ class SimpleNeuralNetwork:
         self.W2 = data["W2"]
         self.b2 = data["b2"]
 
-    def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500):
+    def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500, batch_size=None, shuffle=True):
+        n = X.shape[0]
+        if batch_size is None or batch_size <= 0:
+            batch_size = n  # full batch
+
         for epoch in range(1, epochs + 1):
-            y_pred = self.forward(X)
-            #loss = self.mse(y, y_pred)
-            loss = self.bce(y, y_pred)
-            self.backward(y, learning_rate=learning_rate)
+            # Shuffle
+            if shuffle:
+                idx = np.random.permutation(n)
+                X_epoch = X[idx]
+                y_epoch = y[idx]
+            else:
+                X_epoch = X
+                y_epoch = y
+
+            epoch_loss_sum = 0.0
+            correct_sum = 0
+            seen = 0
+
+            # Mini-batches
+            for start in range(0, n, batch_size):
+                end = start + batch_size
+                Xb = X_epoch[start:end]
+                yb = y_epoch[start:end]
+
+                y_pred = self.forward(Xb)
+                loss = self.bce(yb, y_pred)
+
+                # Acc on this batch
+                y_hat = (y_pred >= 0.5).astype(int)
+                correct_sum += int(np.sum(y_hat == yb))
+
+                # Loss weighted by batch size
+                bs = Xb.shape[0]
+                epoch_loss_sum += float(loss) * bs
+                seen += bs
+
+                # Update
+                self.backward(yb, learning_rate=learning_rate)
+
+            # Epoch metrics
+            epoch_loss = epoch_loss_sum / seen
+            epoch_acc = correct_sum / seen
 
             if epoch % log_every == 0 or epoch == 1:
-                acc = self.accuracy(y, y_pred)
-                print(f"Epoch {epoch:5d} | Loss: {loss:.6f} | Acc: {acc:.2f}")
+                print(f"Epoch {epoch:5d} | Loss: {epoch_loss:.6f} | Acc: {epoch_acc:.2f}")
 
