@@ -49,6 +49,10 @@ class SimpleNeuralNetwork:
 
         return self.y_pred
 
+    def predict(self, X, threshold=0.5):
+        probs = self.forward(X)
+        preds = (probs >= threshold).astype(int)
+        return probs, preds
 
     
     def backward(self, y_true, learning_rate=0.1):
@@ -77,6 +81,15 @@ class SimpleNeuralNetwork:
         self.W1 -= learning_rate * dL_dW1
         self.b1 -= learning_rate * dL_db1
 
+    def save(self, path: str):
+        np.savez(path, W1=self.W1, b1=self.b1, W2=self.W2, b2=self.b2)
+
+    def load(self, path: str):
+        data = np.load(path)
+        self.W1 = data["W1"]
+        self.b1 = data["b1"]
+        self.W2 = data["W2"]
+        self.b2 = data["b2"]
 
     def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500):
         for epoch in range(1, epochs + 1):
@@ -88,5 +101,4 @@ class SimpleNeuralNetwork:
             if epoch % log_every == 0 or epoch == 1:
                 acc = self.accuracy(y, y_pred)
                 print(f"Epoch {epoch:5d} | Loss: {loss:.6f} | Acc: {acc:.2f}")
-
 
