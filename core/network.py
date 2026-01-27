@@ -36,50 +36,77 @@ class SimpleNeuralNetwork:
         y_hat = (y_pred >= threshold).astype(int)
         return float(np.mean(y_hat == y_true))
 
+    @staticmethod
+    def softmax(z):
+        # numerical stability
+        z = z - np.max(z, axis=1, keepdims=True)
+        exp_z = np.exp(z)
+        return exp_z / np.sum(exp_z, axis=1, keepdims=True)
 
-    def forward(self, X):
-        # cache values for backprop
+    @staticmethod
+    def cross_entropy(y_true, y_pred, eps=1e-12):
+        # y_true one-hot, y_pred softmax probs
+        y_pred = np.clip(y_pred, eps, 1 - eps)
+        return -np.mean(np.sum(y_true * np.log(y_pred), axis=1, keepdims=True))
+
+
+    def forward(self, X, output_activation="sigmoid"):
         self.X = X
 
         self.z1 = np.dot(X, self.W1) + self.b1
         self.a1 = self.sigmoid(self.z1)
 
         self.z2 = np.dot(self.a1, self.W2) + self.b2
-        self.y_pred = self.sigmoid(self.z2)
+
+        if output_activation == "sigmoid":
+            self.y_pred = self.sigmoid(self.z2)
+        elif output_activation == "softmax":
+            self.y_pred = self.softmax(self.z2)
+        else:
+            raise ValueError("output_activation must be 'sigmoid' or 'softmax'")
 
         return self.y_pred
 
-    def predict(self, X, threshold=0.5):
-        probs = self.forward(X)
-        preds = (probs >= threshold).astype(int)
+
+    def predict(self, X, output_activation="sigmoid", threshold=0.5):
+        probs = self.forward(X, output_activation=output_activation)
+
+        if output_activation == "sigmoid":
+            preds = (probs >= threshold).astype(int)
+        elif output_activation == "softmax":
+            preds = np.argmax(probs, axis=1)
+        else:
+            raise ValueError("output_activation must be 'sigmoid' or 'softmax'")
+
         return probs, preds
 
+
     
-    def backward(self, y_true, learning_rate=0.1):
-        """
-          BCE loss + sigmoid output için:
-         dL/dz2 = (y_pred - y) / m
-         """
+    def backward(self, y_true, learning_rate=0.1, loss_type="bce"):
         m = y_true.shape[0]
 
-        # Output layer gradient (BCE + sigmoid)
-        dL_dz2 = (self.y_pred - y_true) / m  # (m,1)
+        # Output layer gradient
+        if loss_type in ["bce", "ce"]:
+            dL_dz2 = (self.y_pred - y_true) / m
+        else:
+            raise ValueError("loss_type must be 'bce' or 'ce'")
 
-        dL_dW2 = np.dot(self.a1.T, dL_dz2)               # (3,1)
-        dL_db2 = np.sum(dL_dz2, axis=0, keepdims=True)   # (1,1)
+        dL_dW2 = np.dot(self.a1.T, dL_dz2)
+        dL_db2 = np.sum(dL_dz2, axis=0, keepdims=True)
 
         # Hidden layer
-        dL_da1 = np.dot(dL_dz2, self.W2.T)               # (m,3)
+        dL_da1 = np.dot(dL_dz2, self.W2.T)
         dL_dz1 = dL_da1 * self.sigmoid_derivative(self.a1)
 
-        dL_dW1 = np.dot(self.X.T, dL_dz1)                # (2,3)
-        dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)   # (1,3)
+        dL_dW1 = np.dot(self.X.T, dL_dz1)
+        dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)
 
         # Update
         self.W2 -= learning_rate * dL_dW2
         self.b2 -= learning_rate * dL_db2
         self.W1 -= learning_rate * dL_dW1
         self.b1 -= learning_rate * dL_db1
+
 
     def save(self, path: str):
         np.savez(path, W1=self.W1, b1=self.b1, W2=self.W2, b2=self.b2)
@@ -91,7 +118,9 @@ class SimpleNeuralNetwork:
         self.W2 = data["W2"]
         self.b2 = data["b2"]
 
-    def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500, batch_size=None, shuffle=True):
+    def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500,
+          batch_size=None, shuffle=True, task="binary"):
+
         n = X.shape[0]
         if batch_size is None or batch_size <= 0:
             batch_size = n  # full batch
@@ -110,31 +139,42 @@ class SimpleNeuralNetwork:
             correct_sum = 0
             seen = 0
 
-            # Mini-batches
+            # Mini-batches  
             for start in range(0, n, batch_size):
                 end = start + batch_size
                 Xb = X_epoch[start:end]
                 yb = y_epoch[start:end]
-
-                y_pred = self.forward(Xb)
-                loss = self.bce(yb, y_pred)
-
-                # Acc on this batch
-                y_hat = (y_pred >= 0.5).astype(int)
-                correct_sum += int(np.sum(y_hat == yb))
-
-                # Loss weighted by batch size
                 bs = Xb.shape[0]
-                epoch_loss_sum += float(loss) * bs
+
+                if task == "binary":
+                    y_pred = self.forward(Xb, output_activation="sigmoid")
+                    loss = self.bce(yb, y_pred)
+
+                    y_hat = (y_pred >= 0.5).astype(int)
+                    correct_sum += int(np.sum(y_hat == yb))
+
+                    self.backward(yb, learning_rate=learning_rate, loss_type="bce")
+
+                elif task == "multiclass":
+                    y_pred = self.forward(Xb, output_activation="softmax")
+                    loss = self.cross_entropy(yb, y_pred)
+
+                    y_hat = np.argmax(y_pred, axis=1)
+                    y_true_idx = np.argmax(yb, axis=1)  # one-hot olduğu için doğru
+                    correct_sum += int(np.sum(y_hat == y_true_idx))
+
+                    self.backward(yb, learning_rate=learning_rate, loss_type="ce")
+
+                else:
+                    raise ValueError("task must be 'binary' or 'multiclass'")
+
+                # Batch katkısı
+                epoch_loss_sum += loss * bs
                 seen += bs
 
-                # Update
-                self.backward(yb, learning_rate=learning_rate)
-
-            # Epoch metrics
+            #Epoch metrics 
             epoch_loss = epoch_loss_sum / seen
             epoch_acc = correct_sum / seen
 
             if epoch % log_every == 0 or epoch == 1:
                 print(f"Epoch {epoch:5d} | Loss: {epoch_loss:.6f} | Acc: {epoch_acc:.2f}")
-
