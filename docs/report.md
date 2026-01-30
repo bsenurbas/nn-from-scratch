@@ -1,12 +1,15 @@
-# 📝 Report Notes (Level 1)
+# Report Notes (Level 1)
 
-This document summarizes the implemented experiments and provides initial comparisons between different training settings.
+This report summarizes what has been implemented so far in **Level 1** of the project and documents the core experiments.
+
+The focus of this stage was building a minimal neural network from scratch, validating learning behavior, and extending the model from XOR to multiclass softmax training.
 
 ---
 
-## 1️⃣ XOR Experiment (Binary Classification)
+## 1) XOR Experiment (Binary Classification)
 
-### 🔧 Task
+### Task
+
 Learn the XOR function:
 
 | x1 | x2 | y |
@@ -16,99 +19,229 @@ Learn the XOR function:
 | 1  | 0  | 1 |
 | 1  | 1  | 0 |
 
-### 🧠 Model Architecture
-
-- **Input:** 2 neurons  
-- **Hidden:** 3 neurons  
-- **Output:** 1 neuron  
-- **Activation:** Sigmoid  
-- **Loss:** Binary Cross-Entropy (BCE)
-
-### 📈 Results
-
-The network successfully learns the XOR pattern:
-
-- Loss decreases steadily
-- Accuracy reaches **1.00**
-- Predictions align with expected outputs
-
-**Example Predictions After Training:**
-```
-0 0 -> 0.01 (→ 0)
-0 1 -> 0.98 (→ 1)
-1 0 -> 0.98 (→ 1)
-1 1 -> 0.01 (→ 0)
-```
-
-### 💾 Save/Load Validation
-
-Model persistence is verified:
-
-- **Max absolute difference after reloading:** `0.0`
+XOR cannot be solved with a single linear layer, so a hidden layer is required.
 
 ---
 
-## 2️⃣ Softmax Toy Experiment (Multiclass Classification)
+### Model
 
-### 🔧 Task
+- Input layer: 2 neurons  
+- Hidden layer: 3 neurons  
+- Output layer: 1 neuron  
+- Hidden activation: Sigmoid  
+- Output activation: Sigmoid  
+- Loss: Binary Cross-Entropy (BCE)  
+- Optimizer: Gradient Descent  
 
-Train on a synthetic dataset with 3 distinct clusters:
+---
 
-- Class 0  
-- Class 1  
-- Class 2  
+### Training Output
 
-### 🧠 Model Architecture
+Before training, predictions are random:
 
-- **Input:** 2 neurons  
-- **Hidden:** 8 neurons  
-- **Output:** 3 neurons  
-- **Activation:** Softmax  
-- **Loss:** Cross-Entropy
-
-### 📈 Results
-
-The model converges quickly and performs well:
-
-- Loss drops close to **0**
-- Accuracy reaches **1.00**
-
-**Example Training Log:**
 ```
-Epoch 300 | Loss: 0.035 | Acc: 0.99  
-Epoch 900 | Loss: 0.019 | Acc: 1.00  
+Before training
+x1 x2 | prob    | pred
+----------------------
+
+0  0 | 0.615216 |  1
+0  1 | 0.647575 |  1
+1  0 | 0.620719 |  1
+1  1 | 0.650983 |  1
+```
+
+Loss decreases steadily and the model reaches full accuracy:
+
+```
+Epoch     1 | Loss: 0.752723 | Acc: 0.50
+Epoch  2000 | Loss: 0.283365 | Acc: 1.00
+Epoch  5000 | Loss: 0.017335 | Acc: 1.00
+```
+
+After training, predictions match XOR correctly:
+
+```
+After training
+x1 x2 | prob    | pred
+----------------------
+
+0  0 | 0.019250 |  0
+0  1 | 0.984142 |  1
+1  0 | 0.984112 |  1
+1  1 | 0.017702 |  0
+```
+
+---
+
+### Save / Load Check
+
+The trained model was saved and loaded back successfully:
+
+```
+Loaded model output
+x1 x2 | prob    | pred
+----------------------
+
+0  0 | 0.019250 |  0
+0  1 | 0.984142 |  1
+1  0 | 0.984112 |  1
+1  1 | 0.017702 |  0
+
+Max abs diff (after vs loaded): 0.0
+```
+
+This confirms that serialization works correctly.
+
+---
+
+## 2) Gradient Check (Backprop Validation)
+
+To confirm the correctness of the analytic gradients, a numeric gradient check was implemented.
+
+Example check on parameter `W1[0,0]`:
+
+```
+Gradient check for W1[0,0]
+Numeric  : 0.0067181729
+Analytic : 0.0067181729
+Abs diff : 2.4281297459e-12
+Rel diff : 1.8071354964e-10
+```
+
+The extremely small difference confirms the backward pass is correct.
+
+---
+
+## 3) Mini-Batch Training Support
+
+The training loop was extended to support:
+
+- Full-batch Gradient Descent
+- Mini-batch Gradient Descent
+- Stochastic Gradient Descent (SGD)
+
+Batch size is now configurable through `batch_size`.
+
+---
+
+## 4) Batch Strategy Comparison (GD vs Mini-batch vs SGD)
+
+A comparison experiment was added to observe convergence differences.
+
+---
+
+### Full-Batch Gradient Descent (batch_size=4)
+
+```
+Epoch  3000 | Loss: 0.511175 | Acc: 0.75
+```
+
+Final predictions:
+
+```
+## x1 x2 | prob    | pred | true
+
+0  0 | 0.197559 |  0   |  0
+0  1 | 0.656794 |  1   |  1
+1  0 | 0.590402 |  1   |  1
+1  1 | 0.583839 |  1   |  0
+```
+
+This run converged slower and failed to fully solve XOR.
+
+---
+
+### Mini-Batch Training (batch_size=2)
+
+```
+Epoch  3000 | Loss: 0.054176 | Acc: 1.00
+```
+
+Final predictions:
+
+```
+## x1 x2 | prob    | pred | true
+
+0  0 | 0.052257 |  0   |  0
+0  1 | 0.950494 |  1   |  1
+1  0 | 0.950836 |  1   |  1
+1  1 | 0.059566 |  0   |  0
+```
+
+Mini-batching improved convergence speed significantly.
+
+---
+
+### SGD (batch_size=1)
+
+```
+Epoch  3000 | Loss: 0.013491 | Acc: 1.00
+```
+
+Final predictions:
+
+```
+## x1 x2 | prob    | pred | true
+
+0  0 | 0.015313 |  0   |  0
+0  1 | 0.987699 |  1   |  1
+1  0 | 0.987684 |  1   |  1
+1  1 | 0.013540 |  0   |  0
+```
+
+SGD converged fastest in this toy case.
+
+---
+
+## 5) Softmax Toy Experiment (Multiclass Classification)
+
+To extend beyond binary classification, the network was upgraded with:
+
+- Softmax output activation
+- Cross-entropy loss
+- Multiclass accuracy metric
+
+A 3-class toy dataset with 3 clusters was trained.
+
+---
+
+### Training Output
+
+```
+Training softmax classifier on 3-class toy data
+Epoch     1 | Loss: 1.156448 | Acc: 0.40
+Epoch   300 | Loss: 0.035091 | Acc: 0.99
+Epoch   900 | Loss: 0.019907 | Acc: 1.00
+Epoch  3000 | Loss: 0.007751 | Acc: 1.00
+
 Final train acc: 1.000
 ```
 
----
-
-## 3️⃣ Full-Batch vs Mini-Batch Training
-
-### ⚖️ Comparison Overview
-
-#### Full Batch
-- Processes all data in one update
-- Produces stable gradients
-- Slower convergence
-
-#### Mini Batch
-- Processes small batches (e.g., 32 samples)
-- Faster convergence
-- Slightly noisier gradients
-
-### 🧪 Observations
-- Mini-batch training reached high accuracy faster
-- Training remained stable with batch shuffling
+This confirms the model supports multiclass learning successfully.
 
 ---
 
-## ⏭️ Next Steps (Level 2)
+## Level 1 Summary
 
-Planned improvements and experiments:
+By the end of Level 1, the project includes:
 
-- [ ] Adam Optimizer
-- [ ] Xavier Initialization
-- [ ] Decision Boundary Visualization
-- [ ] Unit Testing Framework
+- Fully working XOR neural network
+- BCE loss and accuracy metric
+- Model save/load support
+- Gradient checking
+- Mini-batch + SGD training support
+- Softmax + cross entropy multiclass extension
+- Batch convergence comparison experiments
+
+---
+
+## Next Step: Level 2
+
+Planned improvements for Level 2 include:
+
+- Refactoring utilities (activations, losses, batching)
+- Adding deeper architectures (multi-layer support)
+- Adding optimizers (Momentum, Adam)
+- Training on real datasets (MNIST)
 
 ---
