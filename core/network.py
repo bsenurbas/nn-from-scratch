@@ -1,5 +1,8 @@
 import numpy as np
-
+from core.activations import sigmoid, sigmoid_derivative, softmax
+from core.losses import bce, cross_entropy
+from core.metrics import accuracy_binary, accuracy_multiclass
+from core.utils import batch_iterator
 
 class SimpleNeuralNetwork:
     def __init__(self, input_size=2, hidden_size=3, output_size=1, seed=42):
@@ -11,57 +14,20 @@ class SimpleNeuralNetwork:
 
         self.W2 = np.random.randn(hidden_size, output_size) * 0.5
         self.b2 = np.zeros((1, output_size))
-
-    @staticmethod
-    def sigmoid(x):
-        return 1 / (1 + np.exp(-x))
-
-    @staticmethod
-    def sigmoid_derivative(sigmoid_output):
-        # If a = sigmoid(z), then d(sigmoid)/dz = a * (1 - a)
-        return sigmoid_output * (1 - sigmoid_output)
-
-    """@staticmethod
-    def mse(y_true, y_pred):
-        return np.mean((y_true - y_pred) ** 2)"""
     
-    @staticmethod
-    def bce(y_true, y_pred, eps=1e-12):
-        # log(0) hatasını önlemek için clipping
-        y_pred = np.clip(y_pred, eps, 1 - eps)
-        return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-
-    @staticmethod
-    def accuracy(y_true, y_pred, threshold=0.5):
-        y_hat = (y_pred >= threshold).astype(int)
-        return float(np.mean(y_hat == y_true))
-
-    @staticmethod
-    def softmax(z):
-        # numerical stability
-        z = z - np.max(z, axis=1, keepdims=True)
-        exp_z = np.exp(z)
-        return exp_z / np.sum(exp_z, axis=1, keepdims=True)
-
-    @staticmethod
-    def cross_entropy(y_true, y_pred, eps=1e-12):
-        # y_true one-hot, y_pred softmax probs
-        y_pred = np.clip(y_pred, eps, 1 - eps)
-        return -np.mean(np.sum(y_true * np.log(y_pred), axis=1, keepdims=True))
-
 
     def forward(self, X, output_activation="sigmoid"):
         self.X = X
 
         self.z1 = np.dot(X, self.W1) + self.b1
-        self.a1 = self.sigmoid(self.z1)
+        self.a1 = sigmoid(self.z1)
 
         self.z2 = np.dot(self.a1, self.W2) + self.b2
 
         if output_activation == "sigmoid":
-            self.y_pred = self.sigmoid(self.z2)
+            self.y_pred = sigmoid(self.z2)
         elif output_activation == "softmax":
-            self.y_pred = self.softmax(self.z2)
+            self.y_pred = softmax(self.z2)
         else:
             raise ValueError("output_activation must be 'sigmoid' or 'softmax'")
 
@@ -81,7 +47,6 @@ class SimpleNeuralNetwork:
         return probs, preds
 
 
-    
     def backward(self, y_true, learning_rate=0.1, loss_type="bce"):
         m = y_true.shape[0]
 
@@ -96,7 +61,7 @@ class SimpleNeuralNetwork:
 
         # Hidden layer
         dL_da1 = np.dot(dL_dz2, self.W2.T)
-        dL_dz1 = dL_da1 * self.sigmoid_derivative(self.a1)
+        dL_dz1 = dL_da1 * sigmoid_derivative(self.a1)
 
         dL_dW1 = np.dot(self.X.T, dL_dz1)
         dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)
@@ -139,32 +104,21 @@ class SimpleNeuralNetwork:
             correct_sum = 0
             seen = 0
 
-            # Mini-batches  
-            for start in range(0, n, batch_size):
-                end = start + batch_size
-                Xb = X_epoch[start:end]
-                yb = y_epoch[start:end]
+            # Mini-batches (batch_iterator ile)
+            for Xb, yb in batch_iterator(X_epoch, y_epoch, batch_size):
                 bs = Xb.shape[0]
-
+ 
                 if task == "binary":
                     y_pred = self.forward(Xb, output_activation="sigmoid")
-                    loss = self.bce(yb, y_pred)
-
-                    y_hat = (y_pred >= 0.5).astype(int)
-                    correct_sum += int(np.sum(y_hat == yb))
-
+                    loss = bce(yb, y_pred)
+                    correct_sum += accuracy_binary(yb, y_pred) * bs
                     self.backward(yb, learning_rate=learning_rate, loss_type="bce")
 
                 elif task == "multiclass":
                     y_pred = self.forward(Xb, output_activation="softmax")
-                    loss = self.cross_entropy(yb, y_pred)
-
-                    y_hat = np.argmax(y_pred, axis=1)
-                    y_true_idx = np.argmax(yb, axis=1)  # one-hot olduğu için doğru
-                    correct_sum += int(np.sum(y_hat == y_true_idx))
-
+                    loss = cross_entropy(yb, y_pred)
+                    correct_sum += accuracy_multiclass(yb, y_pred) * bs
                     self.backward(yb, learning_rate=learning_rate, loss_type="ce")
-
                 else:
                     raise ValueError("task must be 'binary' or 'multiclass'")
 

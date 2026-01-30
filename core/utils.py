@@ -6,7 +6,17 @@ def one_hot(y_idx, num_classes):
     return out
 
 def batch_iterator(X, y, batch_size):
+    """
+    X ve y verisini mini-batch'lere böler.
+    Her iterasyonda (X_batch, y_batch) döndürür.
+    """
+
     n = X.shape[0]
+
     for start in range(0, n, batch_size):
         end = start + batch_size
-        yield X[start:end], y[start:end]
+
+        Xb = X[start:end]
+        yb = y[start:end]
+
+        yield Xb, yb
