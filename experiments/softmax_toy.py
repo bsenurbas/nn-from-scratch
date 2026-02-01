@@ -1,10 +1,7 @@
 import numpy as np
 from core.network import SimpleNeuralNetwork
+from core.utils import one_hot
 
-def one_hot(y, num_classes):
-    out = np.zeros((y.size, num_classes))
-    out[np.arange(y.size), y] = 1
-    return out
 
 def main():
     np.random.seed(42)

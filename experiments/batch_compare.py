@@ -33,7 +33,9 @@ def run_case(name, batch_size, epochs=3000, lr=0.1, seed=42, momentum=0.0):
     )
 
     # Final table
-    probs, preds = nn.predict(X, output_activation="sigmoid", threshold=0.5)
+    probs = nn.predict_proba(X, task="binary")
+    preds = nn.predict(X, task="binary", threshold=0.5)
+
 
     print("\nFinal predictions")
     print("x1 x2 | prob    | pred | true")

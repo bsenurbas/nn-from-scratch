@@ -2,7 +2,6 @@ import numpy as np
 from core.activations import sigmoid, sigmoid_derivative, softmax
 from core.losses import bce, cross_entropy
 from core.metrics import accuracy_binary, accuracy_multiclass
-from core.utils import batch_iterator
 from core.utils import batch_iterator, xavier_uniform
 
 class SimpleNeuralNetwork:
@@ -43,17 +42,46 @@ class SimpleNeuralNetwork:
         return self.y_pred
 
 
-    def predict(self, X, output_activation="sigmoid", threshold=0.5):
-        probs = self.forward(X, output_activation=output_activation)
+    def predict_proba(self, X, task="binary"):
+        if task == "binary":
+            return self.forward(X, output_activation="sigmoid")
 
-        if output_activation == "sigmoid":
-            preds = (probs >= threshold).astype(int)
-        elif output_activation == "softmax":
-            preds = np.argmax(probs, axis=1)
+        elif task == "multiclass":
+            return self.forward(X, output_activation="softmax")
+
         else:
-            raise ValueError("output_activation must be 'sigmoid' or 'softmax'")
+            raise ValueError("task must be 'binary' or 'multiclass'")
 
-        return probs, preds
+
+    def predict(self, X, task="binary", threshold=0.5):
+        probs = self.predict_proba(X, task=task)
+
+        if task == "binary":
+            return (probs >= threshold).astype(int)
+
+        elif task == "multiclass":
+            return np.argmax(probs, axis=1)
+
+        else:
+            raise ValueError("task must be 'binary' or 'multiclass'")
+
+
+    def evaluate(self, X, y, task="binary", threshold=0.5):
+        probs = self.predict_proba(X, task=task)
+
+        if task == "binary":
+            loss = bce(y, probs)
+            acc = accuracy_binary(y, probs, threshold=threshold)
+
+        elif task == "multiclass":
+            loss = cross_entropy(y, probs)
+            acc = accuracy_multiclass(y, probs)
+
+        else:
+            raise ValueError("task must be 'binary' or 'multiclass'")
+
+        return {"loss": float(loss), "accuracy": float(acc)}
+
 
 
     def backward(self, y_true, learning_rate=0.1, loss_type="bce", momentum=0.9):
