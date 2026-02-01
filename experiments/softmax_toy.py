@@ -1,6 +1,7 @@
 import numpy as np
 from core.network import SimpleNeuralNetwork
 from core.utils import one_hot
+from pathlib import Path
 
 
 def main():
@@ -27,6 +28,18 @@ def main():
     pred = nn.predict(X, task="multiclass")
     acc = np.mean(pred == y_idx)
     print(f"\nFinal train acc: {acc:.3f}")
+
+    model_dir = Path("models") / "softmax_toy_v1"
+    nn.save_dir(model_dir)
+
+    nn2 = SimpleNeuralNetwork.load_dir(model_dir)
+    pred2 = nn2.predict(X, task="multiclass")
+    y_true = np.argmax(y, axis=1)
+    acc2 = np.mean(pred2 == y_true)
+
+
+    print(f"Loaded model train acc: {acc2:0.3f}")
+
 
 if __name__ == "__main__":
     main()
