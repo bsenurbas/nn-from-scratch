@@ -20,3 +20,7 @@ def batch_iterator(X, y, batch_size):
         yb = y[start:end]
 
         yield Xb, yb
+
+def xavier_uniform(fan_in: int, fan_out: int):
+    limit = np.sqrt(6.0 / (fan_in + fan_out))
+    return np.random.uniform(-limit, limit, size=(fan_in, fan_out))

@@ -3,17 +3,19 @@ from core.activations import sigmoid, sigmoid_derivative, softmax
 from core.losses import bce, cross_entropy
 from core.metrics import accuracy_binary, accuracy_multiclass
 from core.utils import batch_iterator
+from core.utils import batch_iterator, xavier_uniform
 
 class SimpleNeuralNetwork:
     def __init__(self, input_size=2, hidden_size=3, output_size=1, seed=42):
         np.random.seed(seed)
 
         # weights and biases
-        self.W1 = np.random.randn(input_size, hidden_size) * 0.5
+        self.W1 = xavier_uniform(input_size, hidden_size)
         self.b1 = np.zeros((1, hidden_size))
 
-        self.W2 = np.random.randn(hidden_size, output_size) * 0.5
+        self.W2 = xavier_uniform(hidden_size, output_size)
         self.b2 = np.zeros((1, output_size))
+
     
         # Momentum velocities (initially zero)
         self.vW1 = np.zeros_like(self.W1)

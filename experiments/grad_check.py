@@ -1,5 +1,7 @@
 import numpy as np
 from core.network import SimpleNeuralNetwork
+from core.losses import bce
+from core.activations import sigmoid_derivative
 
 def numeric_gradient(nn, X, y, param_name, idx, eps=1e-5):
     """
@@ -12,12 +14,12 @@ def numeric_gradient(nn, X, y, param_name, idx, eps=1e-5):
     # p + eps
     param[idx] = original + eps
     y_pred_plus = nn.forward(X)
-    loss_plus = nn.bce(y, y_pred_plus)
+    loss_plus = bce(y, y_pred_plus)
 
     # p - eps
     param[idx] = original - eps
     y_pred_minus = nn.forward(X)
-    loss_minus = nn.bce(y, y_pred_minus)
+    loss_minus = bce(y, y_pred_minus)
 
     # restore
     param[idx] = original
@@ -41,7 +43,7 @@ def analytic_gradient_W1_00(nn, X, y):
     dL_da1 = np.dot(dL_dz2, nn.W2.T)             # (m,3)
 
     # da1/dz1 = a1*(1-a1)
-    dL_dz1 = dL_da1 * nn.sigmoid_derivative(nn.a1)  # (m,3)
+    dL_dz1 = dL_da1 * sigmoid_derivative(nn.a1)  # (m,3)
 
     # dL/dW1 = X^T dot dL/dz1
     dL_dW1 = np.dot(nn.X.T, dL_dz1)              # (2,3)
