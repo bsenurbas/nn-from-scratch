@@ -147,8 +147,6 @@ Final predictions:
 1  1 | 0.583839 |  1   |  0
 ```
 
-This run converged slower and failed to fully solve XOR.
-
 ---
 
 ### Mini-Batch Training (batch_size=2)
@@ -168,8 +166,6 @@ Final predictions:
 1  1 | 0.059566 |  0   |  0
 ```
 
-Mini-batching improved convergence speed significantly.
-
 ---
 
 ### SGD (batch_size=1)
@@ -188,8 +184,6 @@ Final predictions:
 1  0 | 0.987684 |  1   |  1
 1  1 | 0.013540 |  0   |  0
 ```
-
-SGD converged fastest in this toy case.
 
 ---
 
@@ -216,8 +210,6 @@ Epoch  3000 | Loss: 0.007751 | Acc: 1.00
 
 Final train acc: 1.000
 ```
-
-This confirms the model supports multiclass learning successfully.
 
 ---
 
@@ -302,10 +294,79 @@ x1 x2 | prob    | pred | true
 1  1 | 0.013540 |  0   |  0
 ```
 
-### Overall Evaluation
+---
 
-- **Full-Batch (GD)** showed a stable but slow convergence and failed to fully solve XOR.
-- **Mini-Batch** converged faster and more reliably, achieving 100% accuracy within 2000 epochs.
-- **SGD** was the fastest method in this case, reaching high accuracy in fewer epochs. However, note that for non-linear datasets it may introduce high variance in learning.
+## 4) Batch Size Comparison (GD vs Mini-batch vs SGD + Momentum)
+
+In this section, three different optimization regimes were compared on the XOR problem:
+
+- **Full-batch Gradient Descent (GD)**  
+- **Mini-batch Gradient Descent (batch_size=2)**  
+- **Stochastic Gradient Descent (SGD, batch_size=1)**  
+
+Additionally, **momentum** was introduced to accelerate convergence and stabilize training.
+
+All experiments were run with:
+
+- Model: `input=2 → hidden=3 → output=1`
+- Loss: Binary Cross-Entropy (BCE)
+- Epochs: 3000
 
 ---
+
+### Full-batch GD (batch_size=4, momentum=0.9)
+
+```text
+Epoch     1 | Loss: 0.729777 | Acc: 0.50
+Epoch   500 | Loss: 0.144089 | Acc: 1.00
+Epoch  3000 | Loss: 0.003701 | Acc: 1.00
+
+Final predictions
+ 0 0 → 0.004380 (pred 0)
+ 0 1 → 0.996638 (pred 1)
+ 1 0 → 0.996579 (pred 1)
+ 1 1 → 0.003607 (pred 0)
+```
+
+---
+
+### Mini-batch Training (batch_size=2, momentum=0.9)
+
+```text
+Epoch     1 | Loss: 0.752723 | Acc: 0.50
+Epoch   500 | Loss: 0.018607 | Acc: 1.00
+Epoch  3000 | Loss: 0.001678 | Acc: 1.00
+
+Final predictions
+ 0 0 → 0.002020 (pred 0)
+ 0 1 → 0.998483 (pred 1)
+ 1 0 → 0.998450 (pred 1)
+ 1 1 → 0.001618 (pred 0)
+```
+
+---
+
+### SGD (batch_size=1, momentum=0.5, lr=0.05)
+
+```text
+Epoch     1 | Loss: 0.749422 | Acc: 0.50
+Epoch   500 | Loss: 0.675424 | Acc: 0.75
+Epoch  1000 | Loss: 0.334519 | Acc: 1.00
+Epoch  3000 | Loss: 0.013010 | Acc: 1.00
+
+Final predictions
+ 0 0 → 0.014750 (pred 0)
+ 0 1 → 0.988116 (pred 1)
+ 1 0 → 0.988081 (pred 1)
+ 1 1 → 0.013053 (pred 0)
+```
+
+---
+
+### Key Takeaways
+
+- **Momentum dramatically improves convergence speed** for GD and mini-batch training.
+- **Mini-batch + momentum** gave the best overall performance and lowest loss.
+- **SGD requires careful tuning**, but can still reach full accuracy when stabilized.
+
+This experiment demonstrates how batch size and optimization dynamics strongly affect training behavior, even on a simple XOR task.
