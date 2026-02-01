@@ -24,8 +24,7 @@ def main():
     nn.train(X, y, epochs=3000, learning_rate=0.1, log_every=300, batch_size=32, shuffle=True, task="multiclass")
 
     # Final accuracy on training set
-    probs = nn.forward(X, output_activation="softmax")
-    pred = np.argmax(probs, axis=1)
+    pred = nn.predict(X, task="multiclass")
     acc = np.mean(pred == y_idx)
     print(f"\nFinal train acc: {acc:.3f}")
 

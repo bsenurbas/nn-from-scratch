@@ -26,12 +26,12 @@ y = np.array([
 
 nn = SimpleNeuralNetwork(hidden_size=3, seed=42)
 
-probs_before = nn.forward(X)
+probs_before = nn.predict_proba(X, task="binary")
 pretty_print("Before training", X, probs_before)
 
 nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500, batch_size=2, shuffle=True)
 
-probs_after = nn.forward(X)
+probs_after = nn.predict_proba(X, task="binary")
 pretty_print("After training", X, probs_after)
 
 nn.save("artifacts/xor_weights.npz")
