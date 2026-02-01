@@ -15,6 +15,13 @@ class SimpleNeuralNetwork:
         self.W2 = np.random.randn(hidden_size, output_size) * 0.5
         self.b2 = np.zeros((1, output_size))
     
+        # Momentum velocities (initially zero)
+        self.vW1 = np.zeros_like(self.W1)
+        self.vb1 = np.zeros_like(self.b1)
+
+        self.vW2 = np.zeros_like(self.W2)
+        self.vb2 = np.zeros_like(self.b2)
+
 
     def forward(self, X, output_activation="sigmoid"):
         self.X = X
@@ -47,7 +54,7 @@ class SimpleNeuralNetwork:
         return probs, preds
 
 
-    def backward(self, y_true, learning_rate=0.1, loss_type="bce"):
+    def backward(self, y_true, learning_rate=0.1, loss_type="bce", momentum=0.9):
         m = y_true.shape[0]
 
         # Output layer gradient
@@ -66,12 +73,24 @@ class SimpleNeuralNetwork:
         dL_dW1 = np.dot(self.X.T, dL_dz1)
         dL_db1 = np.sum(dL_dz1, axis=0, keepdims=True)
 
-        # Update
-        self.W2 -= learning_rate * dL_dW2
-        self.b2 -= learning_rate * dL_db2
-        self.W1 -= learning_rate * dL_dW1
-        self.b1 -= learning_rate * dL_db1
+        # momentum update (classic)
+        if momentum and momentum > 0.0:
+            # momentum update (classic)
+            self.vW2 = momentum * self.vW2 - learning_rate * dL_dW2
+            self.vb2 = momentum * self.vb2 - learning_rate * dL_db2
+            self.vW1 = momentum * self.vW1 - learning_rate * dL_dW1
+            self.vb1 = momentum * self.vb1 - learning_rate * dL_db1
 
+            self.W2 += self.vW2
+            self.b2 += self.vb2
+            self.W1 += self.vW1
+            self.b1 += self.vb1
+        else:
+            # plain SGD update
+            self.W2 -= learning_rate * dL_dW2
+            self.b2 -= learning_rate * dL_db2
+            self.W1 -= learning_rate * dL_dW1
+            self.b1 -= learning_rate * dL_db1
 
     def save(self, path: str):
         np.savez(path, W1=self.W1, b1=self.b1, W2=self.W2, b2=self.b2)
@@ -84,7 +103,7 @@ class SimpleNeuralNetwork:
         self.b2 = data["b2"]
 
     def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500,
-          batch_size=None, shuffle=True, task="binary"):
+          batch_size=None, shuffle=True, task="binary", momentum=0.0):
 
         n = X.shape[0]
         if batch_size is None or batch_size <= 0:
@@ -112,13 +131,13 @@ class SimpleNeuralNetwork:
                     y_pred = self.forward(Xb, output_activation="sigmoid")
                     loss = bce(yb, y_pred)
                     correct_sum += accuracy_binary(yb, y_pred) * bs
-                    self.backward(yb, learning_rate=learning_rate, loss_type="bce")
+                    self.backward(yb, learning_rate=learning_rate, loss_type="bce", momentum=momentum)
 
                 elif task == "multiclass":
                     y_pred = self.forward(Xb, output_activation="softmax")
                     loss = cross_entropy(yb, y_pred)
                     correct_sum += accuracy_multiclass(yb, y_pred) * bs
-                    self.backward(yb, learning_rate=learning_rate, loss_type="ce")
+                    self.backward(yb, learning_rate=learning_rate, loss_type="ce", momentum=momentum)
                 else:
                     raise ValueError("task must be 'binary' or 'multiclass'")
 

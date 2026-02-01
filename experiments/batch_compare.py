@@ -16,8 +16,8 @@ y = np.array([
     [0]
 ], dtype=float)
 
-def run_case(name, batch_size, epochs=3000, lr=0.1, seed=42):
-    print(f"\n=== {name} (batch_size={batch_size}) ===")
+def run_case(name, batch_size, epochs=3000, lr=0.1, seed=42, momentum=0.0):
+    print(f"\n=== {name} (batch_size={batch_size}, momentum={momentum}) ===")
     nn = SimpleNeuralNetwork(hidden_size=3, seed=seed)
 
     # Train
@@ -28,7 +28,8 @@ def run_case(name, batch_size, epochs=3000, lr=0.1, seed=42):
         log_every=500,
         batch_size=batch_size,
         shuffle=True,
-        task="binary"
+        task="binary",
+        momentum=momentum
     )
 
     # Final table
@@ -46,13 +47,15 @@ def run_case(name, batch_size, epochs=3000, lr=0.1, seed=42):
 
 def main():
     # Full-batch (GD)
-    run_case("Full-batch (GD)", batch_size=4)
+    run_case("Full-batch (GD)", batch_size=4, momentum=0.9)
 
     # Mini-batch
-    run_case("Mini-batch", batch_size=2)
+    run_case("Mini-batch", batch_size=2, momentum=0.9)
 
     # SGD (batch_size=1)
-    run_case("SGD", batch_size=1)
+    run_case("SGD", batch_size=1, lr=0.05, momentum=0.5)
+
+
 
 if __name__ == "__main__":
     main()
