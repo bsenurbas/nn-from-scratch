@@ -1,4 +1,6 @@
 import numpy as np
+import json
+from pathlib import Path
 from core.activations import sigmoid, sigmoid_derivative, softmax
 from core.losses import bce, cross_entropy
 from core.metrics import accuracy_binary, accuracy_multiclass
@@ -181,3 +183,62 @@ class SimpleNeuralNetwork:
 
             if epoch % log_every == 0 or epoch == 1:
                 print(f"Epoch {epoch:5d} | Loss: {epoch_loss:.6f} | Acc: {epoch_acc:.2f}")
+    
+    def get_config(self):
+        return {
+            "model_type": "SimpleNeuralNetwork",
+            "version": 1,
+            "input_size": int(self.W1.shape[0]),
+            "hidden_size": int(self.W1.shape[1]),
+            "output_size": int(self.W2.shape[1]),
+            "init": "xavier_uniform",
+        }
+
+    def save_dir(self, model_dir: str):
+        model_dir = Path(model_dir)
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        # weights
+        weights_path = model_dir / "weights.npz"
+        np.savez(
+            weights_path,
+            W1=self.W1, b1=self.b1,
+            W2=self.W2, b2=self.b2
+        )
+
+        # config
+        config_path = model_dir / "config.json"
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(self.get_config(), f, indent=2)
+
+    @classmethod
+    def load_dir(cls, model_dir: str):
+        model_dir = Path(model_dir)
+
+        # config
+        config_path = model_dir / "config.json"
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        nn = cls(
+            input_size=cfg["input_size"],
+            hidden_size=cfg["hidden_size"],
+            output_size=cfg["output_size"],
+        )
+
+        # weights
+        weights_path = model_dir / "weights.npz"
+        data = np.load(weights_path)
+        nn.W1 = data["W1"]
+        nn.b1 = data["b1"]
+        nn.W2 = data["W2"]
+        nn.b2 = data["b2"]
+
+        # momentum state sıfırdan
+        if hasattr(nn, "vW1"):
+            nn.vW1 = np.zeros_like(nn.W1)
+            nn.vb1 = np.zeros_like(nn.b1)
+            nn.vW2 = np.zeros_like(nn.W2)
+            nn.vb2 = np.zeros_like(nn.b2)
+
+        return nn

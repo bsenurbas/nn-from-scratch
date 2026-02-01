@@ -1,5 +1,7 @@
 import numpy as np
 from core.network import SimpleNeuralNetwork
+from pathlib import Path
+
 
 def pretty_print(title, X, probs, threshold=0.5):
     preds = (probs >= threshold).astype(int)
@@ -34,13 +36,15 @@ nn.train(X, y, epochs=5000, learning_rate=0.1, log_every=500, batch_size=2, shuf
 probs_after = nn.predict_proba(X, task="binary")
 pretty_print("After training", X, probs_after)
 
-nn.save("artifacts/xor_weights.npz")
+model_dir = Path("models") / "xor_sigmoid_v1"
 
-nn2 = SimpleNeuralNetwork(hidden_size=3, seed=42)
-nn2.load("artifacts/xor_weights.npz")
+nn.save_dir(model_dir)
 
-probs_loaded = nn2.forward(X)
+nn2 = SimpleNeuralNetwork.load_dir(model_dir)
+
+probs_loaded = nn2.predict_proba(X, task="binary")
 pretty_print("Loaded model output", X, probs_loaded)
+
 
 print("\nMax abs diff (after vs loaded):", np.max(np.abs(probs_after - probs_loaded)))
 
