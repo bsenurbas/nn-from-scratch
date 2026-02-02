@@ -200,40 +200,54 @@ Legacy methods retained but deprecated in use.
 
 This phase transitions the codebase into a mini-framework with reusable components and clean abstraction layers.
 
-# Level 3 Plan — Real Dataset + Testing
+## Level 3 — Real Dataset + Testing
 
-## Goals
-- Add a real dataset experiment (Iris first).
-- Provide a mature public API:
-  - fit
-  - predict_proba
-  - predict
-  - score
-- Add a pytest test suite for correctness and reproducibility.
+### 1) Pytest Foundation
 
-## Milestones
+A minimal `pytest` suite was added to validate core correctness:
 
-### Sprint 3.1 — Test foundation
-- Add pytest
-- Add basic tests:
-  - forward output shapes
-  - softmax rows sum to 1
-  - loss is finite
-  - training loss decreases with fixed seed (small sanity)
+- Forward output shapes (binary and multiclass)
+- Softmax row sums equal 1
+- Loss functions return finite values
+- Score/Evaluate API accepts common label formats
 
-### Sprint 3.2 — Real dataset experiment (Iris)
-- Add `experiments/iris.py`
-- Train multiclass model and report accuracy
-- Save/load verification using `models/iris_v1/`
+**Run:**
 
-### Sprint 3.3 — Public API polish
-- Add `fit()` wrapper around `train()`
-- Add `score()` (binary/multiclass)
-- Add config versioning fields in config.json
+```bash
+python -m pytest -q
+```
 
-### Sprint 3.4 — Expanded tests
-- grad_check tolerance test
-- deterministic run test with fixed seed
-- model IO tests (save_dir/load_dir)
+---
+
+### 2) Iris Dataset Experiment (Real Data)
+
+A real dataset experiment was added using a local CSV file:
+
+- **Dataset**: `data/iris.csv` (4 features, 3 classes)
+- Train/Test split with a fixed seed
+- Standardization using train statistics only
+- **Model**: input=4 → hidden=8 → output=3
+- **Optimizer**: Gradient Descent with momentum
+- Save/load validation via `save_dir` / `load_dir`
+
+**Run:**
+
+```bash
+python -m experiments.iris
+```
+
+**Example output:**
+
+```
+Train acc: 1.000  
+Test  acc: 1.000  
+Loaded model test acc: 1.000
+```
+
+This confirms that:
+
+- the multiclass pipeline works on a real dataset,  
+- the API supports reproducible evaluation,  
+- and model IO produces identical inference after reload.
 
 ---
