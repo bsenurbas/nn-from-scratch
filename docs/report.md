@@ -200,4 +200,40 @@ Legacy methods retained but deprecated in use.
 
 This phase transitions the codebase into a mini-framework with reusable components and clean abstraction layers.
 
+# Level 3 Plan — Real Dataset + Testing
+
+## Goals
+- Add a real dataset experiment (Iris first).
+- Provide a mature public API:
+  - fit
+  - predict_proba
+  - predict
+  - score
+- Add a pytest test suite for correctness and reproducibility.
+
+## Milestones
+
+### Sprint 3.1 — Test foundation
+- Add pytest
+- Add basic tests:
+  - forward output shapes
+  - softmax rows sum to 1
+  - loss is finite
+  - training loss decreases with fixed seed (small sanity)
+
+### Sprint 3.2 — Real dataset experiment (Iris)
+- Add `experiments/iris.py`
+- Train multiclass model and report accuracy
+- Save/load verification using `models/iris_v1/`
+
+### Sprint 3.3 — Public API polish
+- Add `fit()` wrapper around `train()`
+- Add `score()` (binary/multiclass)
+- Add config versioning fields in config.json
+
+### Sprint 3.4 — Expanded tests
+- grad_check tolerance test
+- deterministic run test with fixed seed
+- model IO tests (save_dir/load_dir)
+
 ---
