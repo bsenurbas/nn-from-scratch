@@ -68,21 +68,36 @@ class SimpleNeuralNetwork:
             raise ValueError("task must be 'binary' or 'multiclass'")
 
 
-    def evaluate(self, X, y, task="binary", threshold=0.5):
+    def evaluate(self, X, y, *, task="binary"):
+        """
+        Standard evaluation entry point.
+
+        Returns dict:
+        - loss: float
+        - acc: float
+        """
         probs = self.predict_proba(X, task=task)
 
         if task == "binary":
-            loss = bce(y, probs)
-            acc = accuracy_binary(y, probs, threshold=threshold)
+            # y: (n,1) or (n,)
+            y_true = y.reshape(-1, 1) if y.ndim == 1 else y
+            loss = float(bce(y_true, probs))
+            acc = float(accuracy_binary(y_true, probs))
+            return {"loss": loss, "acc": acc}
 
-        elif task == "multiclass":
-            loss = cross_entropy(y, probs)
-            acc = accuracy_multiclass(y, probs)
+        if task == "multiclass":
+            # y can be class ids (n,) or one-hot (n,C)
+            if y.ndim == 1:
+                y_onehot = np.eye(probs.shape[1])[y.astype(int)]
+            else:
+                y_onehot = y
 
-        else:
-            raise ValueError("task must be 'binary' or 'multiclass'")
+            loss = float(cross_entropy(y_onehot, probs))
+            acc = float(accuracy_multiclass(y_onehot, probs))
+            return {"loss": loss, "acc": acc}
 
-        return {"loss": float(loss), "accuracy": float(acc)}
+        raise ValueError(f"Unknown task: {task}")
+
 
 
 
@@ -234,9 +249,6 @@ class SimpleNeuralNetwork:
                 y_true = y
             return float((preds == y_true).mean())
         
-        print(f"Score (train): {nn.score(X_train, y_train, task='multiclass'):.3f}")
-        print(f"Score (test) : {nn.score(X_test, y_test, task='multiclass'):.3f}")
-
         raise ValueError(f"Unknown task: {task}")
 
     def get_config(self):
