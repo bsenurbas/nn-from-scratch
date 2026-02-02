@@ -7,6 +7,20 @@ from core.metrics import accuracy_binary, accuracy_multiclass
 from core.utils import batch_iterator, xavier_uniform
 
 class SimpleNeuralNetwork:
+    """
+    Public API (stable):
+      - fit(X, y, *, epochs, learning_rate, batch_size, shuffle, task, log_every, momentum) -> self
+      - predict_proba(X, task=...) -> np.ndarray
+      - predict(X, task=...) -> np.ndarray
+      - score(X, y, task=...) -> float
+      - evaluate(X, y, task=...) -> dict: {"loss": float, "acc": float}
+      - save_dir(path) / load_dir(path)
+      - save(path) / load(path)  # backward-compatible wrappers
+
+    Conventions:
+      - task="binary": y can be shape (n,) or (n,1)
+      - task="multiclass": y can be class ids (n,) or one-hot (n,C)
+    """
     def __init__(self, input_size=2, hidden_size=3, output_size=1, seed=42):
         np.random.seed(seed)
 
