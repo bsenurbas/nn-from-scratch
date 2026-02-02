@@ -140,14 +140,15 @@ class SimpleNeuralNetwork:
             self.b1 -= learning_rate * dL_db1
 
     def save(self, path: str):
-        np.savez(path, W1=self.W1, b1=self.b1, W2=self.W2, b2=self.b2)
+        self.save_dir(path)
 
     def load(self, path: str):
-        data = np.load(path)
-        self.W1 = data["W1"]
-        self.b1 = data["b1"]
-        self.W2 = data["W2"]
-        self.b2 = data["b2"]
+        loaded = self.__class__.load_dir(path)
+        self.W1, self.b1 = loaded.W1, loaded.b1
+        self.W2, self.b2 = loaded.W2, loaded.b2
+        self.vW1, self.vb1 = loaded.vW1, loaded.vb1
+        self.vW2, self.vb2 = loaded.vW2, loaded.vb2
+
 
     def train(self, X, y, epochs=5000, learning_rate=0.1, log_every=500,
           batch_size=None, shuffle=True, task="binary", momentum=0.0):
@@ -261,51 +262,58 @@ class SimpleNeuralNetwork:
             "init": "xavier_uniform",
         }
 
-    def save_dir(self, model_dir: str):
-        model_dir = Path(model_dir)
-        model_dir.mkdir(parents=True, exist_ok=True)
+    def save_dir(self, save_dir: str):
+        d = Path(save_dir)
+        d.mkdir(parents=True, exist_ok=True)
 
-        # weights
-        weights_path = model_dir / "weights.npz"
+        # Ağırlıkları kaydet
         np.savez(
-            weights_path,
-            W1=self.W1, b1=self.b1,
-            W2=self.W2, b2=self.b2
+            d / "weights.npz",
+            W1=self.W1,
+            b1=self.b1,
+            W2=self.W2,
+            b2=self.b2
         )
 
-        # config
-        config_path = model_dir / "config.json"
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(self.get_config(), f, indent=2)
+        # Model konfigürasyonu
+        config = {
+            "input_size": int(self.W1.shape[0]),
+            "hidden_size": int(self.W1.shape[1]),
+            "output_size": int(self.W2.shape[1]),
+        }
+
+        (d / "config.json").write_text(
+            json.dumps(config, indent=2),
+            encoding="utf-8"
+        )
+
 
     @classmethod
-    def load_dir(cls, model_dir: str):
-        model_dir = Path(model_dir)
+    def load_dir(cls, load_dir: str):
+        d = Path(load_dir)
 
-        # config
-        config_path = model_dir / "config.json"
-        with open(config_path, "r", encoding="utf-8") as f:
-            cfg = json.load(f)
-
-        nn = cls(
-            input_size=cfg["input_size"],
-            hidden_size=cfg["hidden_size"],
-            output_size=cfg["output_size"],
+        config = json.loads(
+            (d / "config.json").read_text(encoding="utf-8")
         )
 
-        # weights
-        weights_path = model_dir / "weights.npz"
-        data = np.load(weights_path)
+        nn = cls(
+            input_size=config["input_size"],
+            hidden_size=config["hidden_size"],
+            output_size=config["output_size"],
+            seed=42
+        )
+
+        data = np.load(d / "weights.npz")
         nn.W1 = data["W1"]
         nn.b1 = data["b1"]
         nn.W2 = data["W2"]
         nn.b2 = data["b2"]
 
-        # momentum state sıfırdan
-        if hasattr(nn, "vW1"):
-            nn.vW1 = np.zeros_like(nn.W1)
-            nn.vb1 = np.zeros_like(nn.b1)
-            nn.vW2 = np.zeros_like(nn.W2)
-            nn.vb2 = np.zeros_like(nn.b2)
+        # Momentum buffer’ları sıfırla
+        nn.vW1 = np.zeros_like(nn.W1)
+        nn.vb1 = np.zeros_like(nn.b1)
+        nn.vW2 = np.zeros_like(nn.W2)
+        nn.vb2 = np.zeros_like(nn.b2)
 
         return nn
+

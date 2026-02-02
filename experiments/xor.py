@@ -38,9 +38,9 @@ pretty_print("After training", X, probs_after)
 
 model_dir = Path("models") / "xor_sigmoid_v1"
 
-nn.save_dir(model_dir)
+nn.save_dir("models/xor_v1")
 
-nn2 = SimpleNeuralNetwork.load_dir(model_dir)
+nn2 = SimpleNeuralNetwork.load_dir("models/xor_v1")
 
 probs_loaded = nn2.predict_proba(X, task="binary")
 pretty_print("Loaded model output", X, probs_loaded)
