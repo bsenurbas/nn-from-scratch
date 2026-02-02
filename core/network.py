@@ -214,6 +214,31 @@ class SimpleNeuralNetwork:
         )
         return self
 
+    def score(self, X, y, *, task="binary"):
+        """
+        Returns accuracy for binary or multiclass tasks.
+
+        - binary: y can be shape (n,1) or (n,)
+        - multiclass: y can be class ids (n,) or one-hot (n,C)
+        """
+        preds = self.predict(X, task=task)
+
+        if task == "binary":
+            y_true = y.reshape(-1) if hasattr(y, "reshape") else y
+            return float((preds.reshape(-1) == y_true).mean())
+
+        if task == "multiclass":
+            if y.ndim == 2:
+                y_true = np.argmax(y, axis=1)
+            else:
+                y_true = y
+            return float((preds == y_true).mean())
+        
+        print(f"Score (train): {nn.score(X_train, y_train, task='multiclass'):.3f}")
+        print(f"Score (test) : {nn.score(X_test, y_test, task='multiclass'):.3f}")
+
+        raise ValueError(f"Unknown task: {task}")
+
     def get_config(self):
         return {
             "model_type": "SimpleNeuralNetwork",
