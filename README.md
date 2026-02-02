@@ -1,121 +1,163 @@
-# 🧠 Neural Network From Scratch (NumPy)
+# Neural Network From Scratch (NumPy)
 
-This repository contains a simple feedforward neural network implemented **from scratch** using only **NumPy**. The goal is to understand the training pipeline's mathematics without relying on high-level deep learning frameworks like PyTorch or TensorFlow.
+A fully functional neural network framework implemented **from scratch using only NumPy**.
 
----
+This project is designed as an **engineering-grade learning and portfolio repository**, focusing on correctness, reproducibility, and clean API design rather than raw performance.
 
-## 🚀 Features
-
-- **Architecture:** Fully connected neural network (1 hidden layer).
-- **Math:** Forward propagation and manual backpropagation.
-- **Activations:** Sigmoid (binary) and Softmax (multiclass).
-- **Loss Functions:** Binary Cross-Entropy (BCE) and Categorical Cross-Entropy.
-- **Optimization:** Mini-batch gradient descent with optional shuffling.
-- **Utility:** Model save/load support and accuracy tracking.
-- **Validation:** Gradient checking (comparing numeric vs. analytic gradients).
+No deep learning frameworks (PyTorch, TensorFlow, JAX) are used.
 
 ---
 
-## 📂 Project Structure
+## Project Scope
 
-```text
-nn-from-scratch/
-├── core/
-│   └── network.py        # Main neural network implementation
-├── experiments/
-│   ├── xor.py            # XOR binary classification experiment
-│   ├── softmax_toy.py    # 3-class softmax toy dataset experiment
-│   └── grad_check.py     # Gradient check validation
-├── docs/
-│   └── report.md         # Comparison notes and learning report
-└── requirements.txt      # Minimal dependency list
-```
+This repository implements a minimal but complete neural network stack:
+
+- Forward and backward propagation
+- Binary and multiclass classification
+- Multiple training regimes (GD, mini-batch, SGD, momentum)
+- Model persistence with reproducibility guarantees
+- Automated testing and validation
+
+The goal is to demonstrate a deep understanding of **how neural networks work internally**, not to compete with production frameworks.
 
 ---
 
-## 🛠️ Setup
+## Implemented Features
 
-1. **Create a virtual environment:**
-```bash
-python -m venv .venv
-```
+### Core Model
+- Fully connected network (1 hidden layer)
+- Sigmoid activation for binary classification
+- Softmax activation for multiclass classification
+- Binary Cross-Entropy and Cross-Entropy losses
+- Clean separation of activations, losses, metrics, and utilities
 
-2. **Activate it:**
+### Training
+- Full-batch Gradient Descent
+- Mini-batch Gradient Descent
+- Stochastic Gradient Descent (SGD)
+- Momentum support
+- Deterministic training via explicit seeding
 
-- **Windows (PowerShell):**
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
+### Evaluation
+- Binary and multiclass accuracy
+- Unified `predict`, `predict_proba`, `score`, and `evaluate` API
+- Gradient checking (numeric vs analytic)
 
-- **Linux/macOS:**
-```bash
-source .venv/bin/activate
-```
+### Persistence
+- Save/load model weights
+- Directory-based model versioning
+- Save/load validation included in experiments
 
-3. **Install dependencies:**
-```bash
-pip install -r requirements.txt
-```
+### Testing
+- Pytest-based test suite
+- Shape checks
+- Softmax probability validation
+- Loss finiteness checks
+- Deterministic training behavior
 
 ---
 
-## 🧪 Running Experiments
+## Experiments
 
-### 1. XOR (Binary Classification)
-
-Trains the network to solve the non-linear XOR problem.
+### XOR (Binary Classification)
+- Demonstrates non-linear separability
+- Verifies forward/backward correctness
+- Includes save/load validation
 
 ```bash
 python -m experiments.xor
 ```
 
-- **Expected:** Loss decreases; Accuracy reaches 1.00.
-
-### 2. Softmax Toy Dataset (Multiclass)
-
-Trains on a 3-class synthetic dataset.
+### Softmax Toy Dataset (Multiclass)
+- 3-class synthetic clustering problem
+- Softmax + cross-entropy training
+- Save/load consistency check
 
 ```bash
 python -m experiments.softmax_toy
 ```
 
-- **Expected:** Cross-entropy loss drops; Training accuracy approaches 1.00.
+### Iris Dataset (Real Dataset)
+- Classic 3-class real-world dataset
+- Train / test split
+- Loaded model evaluation
 
-### 3. Gradient Check
+```bash
+python -m experiments.iris
+```
 
-Verifies the correctness of the backpropagation implementation.
+### Gradient Check
+- Numeric vs analytic gradient comparison
+- Confirms correctness of backpropagation
 
 ```bash
 python -m experiments.grad_check
 ```
 
-- **Expected:** Numeric and analytic gradients match (low relative difference).
+---
+
+## Project Structure
+
+```text
+nn-from-scratch/
+├── core/               # Core neural network components
+│   ├── activations.py
+│   ├── losses.py
+│   ├── metrics.py
+│   ├── utils.py
+│   └── network.py
+├── experiments/        # Reproducible experiments
+├── data/               # Real datasets (Iris)
+├── models/             # Saved models and configs
+├── tests/              # Automated tests (pytest)
+├── docs/               # Reports and experiment notes
+├── pytest.ini
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## 🎯 Learning Goals
+## Setup
 
-This project provides hands-on experience with:
-
-- The internal mechanics of **backpropagation**
-- Differences between **Sigmoid + BCE** and **Softmax + Cross-Entropy**
-- **Mini-batch** vs. full-batch training dynamics
-- Using **gradient checking** to debug neural networks
-
----
-
-## 🗺️ Roadmap
-
-- [ ] Implement Adam Optimizer
-- [ ] Xavier/He weight initialization
-- [ ] Add regularization techniques (L2, Dropout)
-- [ ] Visualize decision boundaries using Matplotlib
-- [ ] Benchmark on a subset of MNIST
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Linux / macOS
+.\.venv\Scripts\Activate.ps1   # Windows
+pip install -r requirements.txt
+```
 
 ---
 
-## 👤 Author
+## Running Tests
 
-Built as an educational deep learning project to master the fundamentals.
+```bash
+python -m pytest -q
+```
+
+All tests are expected to pass.
 
 ---
+
+## Design Philosophy
+
+- Explicit over implicit
+- Determinism over randomness
+- Correctness over performance
+- Clear APIs over convenience hacks
+
+This repository is intentionally small, readable, and inspectable.
+
+---
+
+## Status
+
+This project is **feature-complete** for its intended scope.
+
+Future extensions (CNNs, deeper architectures, GPU acceleration) are intentionally out of scope.
+
+---
+
+## Author
+
+Built as a deep learning fundamentals and engineering portfolio project.
