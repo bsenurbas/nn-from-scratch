@@ -295,3 +295,4 @@ Rather than expanding indefinitely, the framework was stabilized once:
 - and behavior was covered by automated tests.  
 
 This deliberate limitation ensures that the codebase remains readable, inspectable, and suitable as a reference implementation and engineering portfolio artifact.
+
