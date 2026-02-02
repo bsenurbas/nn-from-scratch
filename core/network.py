@@ -184,6 +184,36 @@ class SimpleNeuralNetwork:
             if epoch % log_every == 0 or epoch == 1:
                 print(f"Epoch {epoch:5d} | Loss: {epoch_loss:.6f} | Acc: {epoch_acc:.2f}")
     
+    def fit(
+        self,
+        X,
+        y,
+        *,
+        epochs=1000,
+        learning_rate=0.1,
+        batch_size=None,
+        shuffle=True,
+        task="binary",
+        log_every=100,
+        momentum=0.0,
+    ):
+        """
+        Scikit-learn style wrapper around train().
+        Returns self for chaining.
+        """
+        self.train(
+            X,
+            y,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            task=task,
+            log_every=log_every,
+            momentum=momentum,
+        )
+        return self
+
     def get_config(self):
         return {
             "model_type": "SimpleNeuralNetwork",
